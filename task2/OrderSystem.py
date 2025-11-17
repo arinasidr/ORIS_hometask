@@ -54,7 +54,6 @@ class OrderSystem:
             "Натираю приборы"
         ]
 
-        # TODO: Выполняем подготовительные действия и сообщаем поварам и официантам "ОТКРЫВАЕМСЯ!!!"
         for task in tasks:
             print(f"ПОВАР: {task}")
             time.sleep(1)
@@ -62,17 +61,17 @@ class OrderSystem:
         print("ПОВАР: Кухня готова! ОТКРЫВАЕМСЯ!")
         self.kitchen_ready.set()
 
-
     # функция для генерации заказов (то есть наши официанты). Не забываем, что ресторан должен быть открыт!
     def order_producer(self, producer_id):
         menu_items = [
-            # придумайте пулл блюд, с которыми будут генерироваться заказы
             "Пицца Маргарита", "Паста Карбонара", "Стейк Рибай", "Салат Цезарь", "Бургер Делишес", "Суп Том-Ям", 
             "Тако с говядиной", "Греческий салат", "Суши Филадельфия", "Рамен с говядиной"
         ]
 
         while self.system_running:
-            self.kitchen_ready.wait()
+            if not self.kitchen_ready.wait(timeout=1):
+                continue
+                
             order = {
                 "order_id": random.randint(1000, 9999),
                 "customer_id": random.randint(1, 100),
@@ -83,22 +82,23 @@ class OrderSystem:
                 "producer_id": producer_id
             }
 
-            # TODO: Официант принимает заказ (мы его генерируем), отправляет поварам (не забываем про подсчет статистики)
-            self.order_queue.put(order)
-            print(f"ОФИЦИАНТ - {producer_id}, принял заказ {order['order_id']}")
-            with self.stats_lock:
-                self.stats["total_orders"] += 1
+            try:
+                self.order_queue.put(order, timeout=1)
+                print(f"ОФИЦИАНТ - {producer_id}, принял заказ {order['order_id']}")
+                with self.stats_lock:
+                    self.stats["total_orders"] += 1
+            except queue.Full:
+                continue
 
             time.sleep(random.uniform(0.5, 2))
 
     # функция для обработки заказов (наши поварята) - повар спрашивает повара... Не забываем, что ресторан должен быть открыт!
     def chef_consumer(self, chef_id):
-        # TODO: Повар забирает заказ, проверяет есть ли свободная конфорка (если нет, то ждет, естественно), готовит по
-        #  длительности в зависимости от сложности блюда cook_time = order["complexity"] * 0.5. Не забываем про статистику и статусы блюд!
         while self.system_running:
-            self.kitchen_ready.wait()
+            if not self.kitchen_ready.wait(timeout=1):
+                continue
 
-            #получаем заказ
+            # получаем заказ
             try:
                 order = self.order_queue.get(timeout=1)
             except queue.Empty:
@@ -108,53 +108,47 @@ class OrderSystem:
             order["chef_id"] = chef_id
             start_cooking = datetime.now()
 
-            #занимаем конфорку
+            # занимаем конфорку
             with self.stove_condition:
                 while self.available_stoves == 0 and self.system_running:
                     self.stove_condition.wait(timeout=1)
-
-            if not self.system_running: 
+                
+                if not self.system_running:
+                    self.order_queue.put(order)
+                    break
+                    
+                self.available_stoves -= 1
+            
+            if not self.system_running:
                 break
 
-            self.available_stoves -= 1
+            print(f"ПОВАР {chef_id}: Занял конфорку и начинаю готовить заказ №{order['order_id']}")
             
-            print(f"ПОВАР {chef_id}: Занял комфорку и начинаю готовить заказ №{order["order_id"]}")
-            
-            #готовим заказ
-            if self.system_running:
-                cooking_time = order["complexity"] * 0.5
-                time.sleep(cooking_time)
+            # готовим заказ
+            cooking_time = order["complexity"] * 0.5
+            time.sleep(cooking_time)
 
-                order["status"] = OrderStatus.READY.value
-                end_cooking = datetime.now()
+            order["status"] = OrderStatus.READY.value
+            end_cooking = datetime.now()
 
-                print(f"ПОВАР {chef_id}: заказ №{order["order_id"]} готов! Освобождаю конфорку...")
+            print(f"ПОВАР {chef_id}: заказ №{order['order_id']} готов! Освобождаю конфорку...")
 
-            #освобождаем конфорку
             with self.stove_condition:
                 self.available_stoves += 1
                 self.stove_condition.notify_all()
             
-            #обновляем статистику
             with self.stats_lock:
                 self.stats["completed_orders"] += 1
                 self.stats["cooking_time_total"] += (end_cooking - start_cooking).total_seconds()
 
             self.order_queue.task_done()
-            
     
-    # Функция для демон-потока
     def monitoring(self):
-
-        # TODO: Если рестик работает, каждые 5 секунд забираем статистику по параметрам:
-        #  "Всего заказов",
-        #  "Выполнено",
-        #  "В очереди",
-        #  "Среднее время приготовления блюд",
-        #  "Количество свободных конфорок" и записываем статистику в файл со временем когда эта статистика была записана
         while self.system_running:
             time.sleep(5)
-            self.kitchen_ready.wait()
+            if not self.kitchen_ready.wait(timeout=1):
+                continue
+                
             with self.stats_lock:
                 total_orders = self.stats["total_orders"]
                 completed_orders = self.stats["completed_orders"]
@@ -163,55 +157,60 @@ class OrderSystem:
             average_time = (cooking_time_total / completed_orders) if completed_orders > 0 else 0
 
             in_queue = self.order_queue.qsize()
-            free_stoves = self.available_stoves
+            
+            with self.stove_condition:
+                free_stoves = self.available_stoves
 
             timestamp = datetime.now().strftime("%H:%M:%S")
-            log_mes = f"[{timestamp}] [{total_orders}] [{in_queue}] [{average_time}] [{free_stoves}]\n"
+            log_mes = f"[{timestamp}] Всего заказов: {total_orders}, В очереди: {in_queue}, Среднее время: {average_time:.2f}, Свободные конфорки: {free_stoves}\n"
+            
             with open('restaurant_logs.txt', 'a', encoding="utf-8") as f:
                 f.write(log_mes)
             
+            print(f"МОНИТОРИНГ: {log_mes.strip()}")
 
     def start_system(self):
         print("ЗАПУСК СИСТЕМЫ РЕСТОРАНА...")
-
-        # TODO: Запускаем нашу подготовку ресторана в отдельном потоке, ждем завершения и запускаем официантов и
-        #  поваров, а также нашего демон-потока для статистики
         self.system_running = True
 
-        preparation_thread = threading.Thread(target = self.kitchen_preparation)
+        preparation_thread = threading.Thread(target=self.kitchen_preparation)
         preparation_thread.start()
         preparation_thread.join()
 
         for i in range(3):
-            producer_thread = threading.Thread(target = self.order_producer, args = (i + 1,))
+            producer_thread = threading.Thread(target=self.order_producer, args=(i + 1,))
             self.producers.append(producer_thread)
             producer_thread.start()
 
         for i in range(2):
-            consumer_thread = threading.Thread(target = self.chef_consumer, args = (i + 1,))
+            consumer_thread = threading.Thread(target=self.chef_consumer, args=(i + 1,))
             self.consumers.append(consumer_thread)
             consumer_thread.start()
         
-        self.monitor_thread = threading.Thread(target=self.monitoring, daemon=True)
+        self.monitor_thread = threading.Thread(target=self.monitoring)
+        self.monitor_thread.daemon = True
         self.monitor_thread.start()
 
     def stop_system(self):
         print("ЗАКРЫТИЕ РЕСТОРАНА...")
-
-        # TODO: ждем когда все освободятся, выводим в консоль итоги рабочего дня:
-        #  "Всего принято заказов",
-        #  "Успешно выполнено",
-        #  "Среднее время приготовления
         self.system_running = False
 
-        time.sleep(0.5)
+        with self.stove_condition:
+            self.stove_condition.notify_all()
 
         for i in self.producers:
-            i.join()
-
+            i.join(timeout=2)
+            
         for j in self.consumers:
-            j.join()
+            j.join(timeout=2)
         
+        while not self.order_queue.empty():
+            try:
+                self.order_queue.get_nowait()
+                self.order_queue.task_done()
+            except queue.Empty:
+                break
+
         with self.stats_lock:
             total_orders = self.stats["total_orders"]
             completed_orders = self.stats["completed_orders"]
@@ -227,16 +226,12 @@ class OrderSystem:
         print("РЕСТОРАН ЗАКРЫТ!")
 
 
-# Запуск системы
 if __name__ == "__main__":
     restaurant = OrderSystem()
 
     try:
         restaurant.start_system()
-
-        # работаем 60 секунд
         time.sleep(30)
-
         restaurant.stop_system()
 
     except KeyboardInterrupt:
