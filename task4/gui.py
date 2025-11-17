@@ -20,7 +20,7 @@ class ChatWidget(QWidget):
 
         self.text_label = QLabel(self.text) 
         self.text_label.setWordWrap(True)
-        self.text_label.setStyleSheet("color: #;")
+        self.text_label.setStyleSheet("color: #FFFFFF;")
         self.text_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(self.text_label)
 
