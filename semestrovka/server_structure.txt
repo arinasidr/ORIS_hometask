@@ -1,0 +1,95 @@
+Сервер состоит из трех файлов:
+1. server.py 
+Отвечает за: запуск сервера, принятие клиентов, создание потоков, обработку исключений
+
+2. rooms.py
+Отвечает за: создание\поиск комнатки, добавление\удаление игроков, закрытие комнаты и ее удаление, рассылку сообщений в комнате
+
+3. game_state.py
+Отвечает за: поле, позиции игроков, ход, столкновения, бонусы, победу
+
+
+функции server.py:
+start_server(host, port)
+– запускает сервер, слушает порт
+
+accept_clients()
+– принимает новые подключения
+– создаёт новый поток для каждого клиента
+– регистрирует клиента
+
+handle_client(client_socket)
+– принимает сообщения от клиента
+– разбирает сообщение по протоколу
+– вызывает нужные обработчики (signup, move, chat…)
+– следит за disconnect
+
+send_message(socket, message)
+– сериализация и отправка
+
+
+функции rooms.py:
+class Room
+– id комнаты
+– список игроков
+– game_state
+– статус комнаты (waiting/playing/game_over)
+
+add_player(self, client_socket, player_name)
+-добавить игрока в комнату
+
+remove_player(self, client_socket)
+-удалить игрока из комнаты
+
+start_game(self)
+-начать игру
+
+class RoomManager
+-список комнат всех
+
+find_available_room()
+– найти комнату с 1–2 игроками
+
+create_new_room()
+– создать новую комнату
+– присвоить уникальный id
+
+add_client_to_room(client_socket, player_name)
+– добавляет игрока в комнату
+– после добавления: room_update
+
+remove_client_from_room(client_socket)
+– если человек вышел
+– удалить
+– закрыть комнату, если игроков нет
+
+broadcast_to_room(room_id, message, exclude_socket=None)
+– разослать всем игрокам комнаты сообщение
+
+get_client_room(self, client_socket):
+-получить комнату игрока
+
+
+функции game_state.py:
+class GameState
+
+init()
+– создать поле 15×15
+– расставить игроков по углам
+– сбросить блокировки
+
+update_player_position(player_name, direction)
+– двигать игрока
+– обрабатывать захват клетки
+– обрабатывать столкновения
+
+check_gameover()
+– проверка 60% территории
+– проверка таймера игры
+
+generate_state_packet()
+– собрать данные для state_update
+– поле
+– позиции
+– бонусы
+– блокировки
