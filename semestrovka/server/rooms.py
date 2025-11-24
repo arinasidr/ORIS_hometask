@@ -1,25 +1,78 @@
 import random
 import pickle
+import threading
+import time
+
+from game import GameState
 
 class Room:
     def __init__(self, room_id):
         self.room_id = room_id
         self.players = {} #socket:player
         self.status = 'waiting'
-        #self.game_state = GameState()
+        self.game_state = None
+        self.loop_running = False
 
     def add_player(self, client_socket, player_name):
         self.players[client_socket] = player_name
-        if len(self.players) == 2:
+        if len(self.players) == 2 or len(self.players) == 3:
             self.start_game()
 
     def remove_player(self, client_socket):
         if client_socket in self.players:
+            name = self.players[client_socket]
             del self.players[client_socket]
+
+            if self.game_state:
+                self.game_state.remove_player(name)
+
+            if not self.players:
+                self.loop_running = False
     
     def start_game(self):
+        if self.status == 'playing':
+            return 
+        
+        self.game_state = GameState()
+        self.game_state.init(list(self.players.values()))
         self.status = 'playing'
-        #TODO реализовать начало игры (это когда будет готов класс GameState)
+
+        self.loop_running = True
+        threading.Thread(target=self.game_loop, daemon=True).start()
+
+    def game_loop(self):
+        while self.loop_running and self.status == 'playing':
+            state = self.game_state.generate_state_packet()
+            self.broadcast({
+                'type': 'state_update',
+                'state': state
+            })
+
+            winner = self.game_state.check_game_over()
+            if winner is not None:
+                self.broadcast({
+                    'type': 'game_over',
+                    'winner': winner
+                })
+                self.status = 'finished'
+                self.loop_running = False
+                break
+            
+            time.sleep(0.2)
+    
+    def broadcast(self, message_dict, is_own = None):
+        lst = []
+        for conn in list(self.players.keys()):
+            if conn is is_own:
+                continue
+            try:
+                conn.sendall(pickle.dumps(message_dict))
+            except:
+                lst.append(conn)
+        
+        for i in lst:
+            del self.players[i]
+        
 
 class RoomManager:
     def __init__(self):
@@ -27,17 +80,18 @@ class RoomManager:
 
     def find_available_room(self):
         for room in self.rooms.values():
-            if len(room.players) < 3:
+            if room.status == 'waiting' and len(room.players) < 3:
                 return room
         return None
 
     def create_new_room(self):
-        while True:
-            room_id = random.randint(0, 50) #мб потом поменять на счетчик
-            if room_id not in self.rooms:
-                room = Room(room_id)
-                self.rooms[room_id] = room
-                return room
+        room_id = random.randint(0, 50) #мб все таки потом мы поменяем на счетчик да арина
+        if room_id not in self.rooms:
+            room = Room(room_id)
+            self.rooms[room_id] = room
+            return room
+        else:
+            return self.create_new_room()
         
     def add_client_to_room(self, client_socket, player_name):
         room = self.find_available_room()
@@ -56,16 +110,8 @@ class RoomManager:
 
     def broadcast_to_room(self, room_id, message, is_own = None):
         room = self.rooms.get(room_id)
-        if not room:
-            return
-        
-        for conn in list(room.players.keys()):
-            if conn is is_own:
-                continue
-            try:
-                conn.sendall(pickle.dumps(message, protocol=pickle.HIGHEST_PROTOCOL))
-            except:
-                self.remove_client_from_room(conn)
+        if room:
+            room.broadcast(message, is_own)
 
     def get_client_room(self, client_socket):
         for room in self.rooms.values():

@@ -30,8 +30,12 @@ class Server:
         try:
             pickle_mes = pickle.dumps(message_dict, protocol=pickle.HIGHEST_PROTOCOL)
             conn.sendall(pickle_mes)
-        except ConnectionResetError:
+        except Exception:
             self.rooms.remove_client_from_room(conn)
+            try:
+                conn.close()
+            except:
+                pass
 
     def remove_client(self, conn):
         with self.lock:
@@ -81,6 +85,31 @@ class Server:
                         'from_user': player_name,
                         'data': text
                     }, conn)
+
+                elif msg_type == 'move':
+                    room_id = self.rooms.get_client_room(conn)
+                    if room_id is None:
+                        continue
+
+                    room = self.rooms.rooms.get(room_id)
+                    if not room or not room.game_state:
+                        continue
+                    
+                    direction = msg_dict.get('direction')
+                    if not direction:
+                        continue
+                    result = room.game_state.update_player_position(player_name, direction)
+                    
+                    self.send_message(conn, {
+                        "type": "move_result",
+                        "data": result
+                    })
+
+                    state = room.game_state.generate_state_packet()
+                    self.rooms.broadcast_to_room(room_id, {
+                        'type': 'state_update',
+                        'state': state
+                    })
                 
                 elif msg_type == 'disconnect':
                     break

@@ -8,6 +8,7 @@ class GameState:
         self.territories = {}  # player: set((x, y), ...)
         self.last_move = {} # player_name: time last move
         self.blocked_until = {} #player_name: time (когда разблокируется)
+        self.start_time = None
 
     def init(self, players):
         self.field = [[0]*15 for _ in range(15)]
@@ -31,6 +32,16 @@ class GameState:
             self.blocked_until[player] = 0
             self.last_move[player] = 0
 
+    def remove_player(self, player_name):
+        if player_name in self.positions:
+            del self.positions[player_name]
+        if player_name in self.territories:
+            del self.territories[player_name]
+        if player_name in self.last_move:
+            del self.last_move[player_name]
+        if player_name in self.blocked_until:
+            del self.blocked_until[player_name]
+
     def update_player_position(self, player_name, direction):
         now = time.time()
 
@@ -51,12 +62,14 @@ class GameState:
         elif direction == 'right':
             new_x = x + 1 if x + 1 <=14 else 14
         
+        # кто стоит в клетке
         occupant = None
         for other, pos in self.positions.items():
             if other != player_name and pos == (new_x, new_y):
                 occupant = other
                 break
-
+        
+        #кто владелец клетки
         owner = None
         for p, cells in self.territories.items():
             if (new_x, new_y) in cells:
@@ -75,6 +88,7 @@ class GameState:
             self.territories[winner].add((new_x, new_y))
 
             self.last_move[winner] = now
+            self.last_move[player_name] = now
 
             return {
                 'result': 'collision_empty',
@@ -82,6 +96,7 @@ class GameState:
                 'winner': winner,
                 'new_pos': self.positions[player_name]
             }
+        
         #столкновение на занятой клетке
         if owner is not None and occupant is not None:
             blocked = player_name if player_name != owner else occupant
@@ -126,12 +141,12 @@ class GameState:
                 'new_pos': (new_x, new_y)
             }
         
-    def check_game_over(self, players):
+    def check_game_over(self):
         if time.time() - self.start_time >= 300:
             return self.get_winner()
         
-        if len(players) == 1:
-            return list(players)[0]
+        if len(self.positions) == 1:
+            return list(self.positions.keys())[0]
         
         for player, cells in self.territories.items():
             if len(cells) >= 120:
@@ -151,5 +166,5 @@ class GameState:
             'field': self.field,
             'positions':self.positions,
             'territories': {p: list(cells) for p, cells in self.territories.items()},
-            'blocked': list(self.blocked_until)
+            'blocked': {p: max(0, self.blocked_until[p] - time.time()) for p in self.blocked_until}
         }
