@@ -2,8 +2,17 @@ import socket
 import threading
 import pickle
 
-class GameClient:
-    def __init__(self, host = 'localhost', port = 5555):
+from PyQt5.QtCore import QObject, pyqtSignal
+
+class GameClient(QObject):
+    signal_join_room = pyqtSignal(int)            # room_id
+    signal_room_update = pyqtSignal(list)         # список имён
+    signal_state_update = pyqtSignal(dict)        # state dict
+    signal_move_result = pyqtSignal(dict)         # результат хода
+    signal_game_over = pyqtSignal(str)            # winner 
+    signal_error = pyqtSignal(str)                # текст ошибки 
+    def __init__(self, host = 'localhost', port = 12345):
+        super().__init__()
         self.host = host
         self.port = port
         self.socket = None
@@ -71,19 +80,29 @@ class GameClient:
 
         if msg_type == 'join_room':
             self.room_id = message['room_id']
+            self.signal_join_room.emit(self.room_id)
             print(f'Вы вошли в комнату: {self.room_id}')
         elif msg_type == 'room_update':
-            players = message['data']
-            print('Игроки в комнате: ', players)
+            self.players = message['data']
+            self.signal_room_update.emit(self.players)
+            print('Игроки в комнате: ', self.players)
         elif msg_type == 'state_update':
-            self.game_state = message['state']
+            state = message['state']
+            self.game_state = state
+            self.signal_state_update.emit(state)
             #TODO добавить сюда отрисовку поля когда она будет готова
         elif msg_type == 'move_result':
             result = message['data']['result']
+            self.signal_move_result.emit(message['data'])
             print('Результат хода: ', result)
         elif msg_type == 'game_over':
             winner = message['winner']
+            self.signal_game_over.emit(winner)
             print('Игра окончена! Победитель: ', winner)
             self.running = False
-            
+            self.disconnect_client()
+        else:
+            self.signal_error.emit(f'Неизвестная команда: {msg_type}')
+
+
         
