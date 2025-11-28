@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Профиль</title>
+    <style>
+        .profile {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .username {
+            color: #2c3e50;
+            font-size: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class = 'profile'>
+        <h1>Профиль пользователя</h1>
+        {% if name %}
+            <p class = 'username'> {{name.capitalize()}}</p>
+        {% else %}
+            <p class = 'username'>Гость</p>
+        {% endif %}
+        <p>Добро пожаловать!</p>
+        <p><a href="{{ url_for('index') }}">Перейти на главную</a></p>
+    </div>
+</body>
+</html>
