@@ -11,6 +11,7 @@ class GameClient(QObject):
     signal_move_result = pyqtSignal(dict)         # результат хода
     signal_game_over = pyqtSignal(str)            # winner 
     signal_error = pyqtSignal(str)                # текст ошибки 
+    signal_chat = pyqtSignal(str)
     def __init__(self, host = 'localhost', port = 12345):
         super().__init__()
         self.host = host
@@ -23,7 +24,26 @@ class GameClient(QObject):
         self.room_id = None
         self.player_name = None
         self.players = None
-        
+    
+    def recv_exact(self, n):
+        data = b''
+        while len(data) < n:
+            packet = self.socket.recv(n - len(data))
+            if not packet:
+                return None
+            data += packet
+        return data
+
+    def recv_message(self):
+        header = self.recv_exact(4)
+        if not header:
+            return None
+        length = int.from_bytes(header, 'big')
+        data = self.recv_exact(length)
+        if not data:
+            return None
+        return pickle.loads(data)
+
     def connect(self):
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -40,6 +60,10 @@ class GameClient(QObject):
             return False
         
     def disconnect_client(self):
+        try:
+            self.send_command({'type': 'disconnect'})
+        except:
+            pass
         self.running = False
         if self.socket:
             self.socket.close()
@@ -49,7 +73,7 @@ class GameClient(QObject):
         if self.socket:
             try:
                 message = pickle.dumps(command)
-                self.socket.send(message)
+                self.socket.sendall(len(message).to_bytes(4, 'big') + message)
             except Exception as e:
                 print(f'Ошибочка: {e}')
 
@@ -63,12 +87,10 @@ class GameClient(QObject):
     def listen_server(self):
         try:
             while self.running:
-                data = self.socket.recv(4096)
-                if not data:
+                msg = self.recv_message()
+                if not msg:
                     print('[ОТКЛЮЧЕНИЕ] Соединение разорвано сервером')
                     break
-                    
-                msg = pickle.loads(data)
                 self.process_message(msg)
         except Exception as e:
             print(f'Ошибка получения данных: {e}')
@@ -90,7 +112,6 @@ class GameClient(QObject):
             state = message['state']
             self.game_state = state
             self.signal_state_update.emit(state)
-            #TODO добавить сюда отрисовку поля когда она будет готова
         elif msg_type == 'move_result':
             result = message['data']['result']
             self.signal_move_result.emit(message['data'])
@@ -101,8 +122,9 @@ class GameClient(QObject):
             print('Игра окончена! Победитель: ', winner)
             self.running = False
             self.disconnect_client()
+        elif msg_type == 'chat':
+            user = message['from_user']
+            text = message['data']
+            self.signal_chat.emit(f'{user}: {text}')
         else:
             self.signal_error.emit(f'Неизвестная команда: {msg_type}')
-
-
-        

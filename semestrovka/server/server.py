@@ -13,6 +13,25 @@ class Server:
         self.rooms = RoomManager()
         self.lock = threading.Lock()
 
+    def recv_exact(self, conn, n):
+        data = b''
+        while len(data) < n:
+            packet = conn.recv(n - len(data))
+            if not packet:
+                return None
+            data += packet
+        return data
+
+    def recv_message(self, conn):
+        header = self.recv_exact(conn, 4)
+        if not header:
+            return None
+        length = int.from_bytes(header, 'big')
+        data = self.recv_exact(conn, length)
+        if not data:
+            return None
+        return pickle.loads(data)
+
     def start_server(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -23,13 +42,13 @@ class Server:
             while True:
                 conn, addr = self.server_socket.accept()
                 print(f"Подключен клиент: {addr}")
-                client_thread = threading.Thread(target=self.handle_client, args=(conn, addr), daemon=True)
+                client_thread = threading.Thread(target=self.handle_client, args=(conn, ), daemon=True)
                 client_thread.start()
     
     def send_message(self, conn, message_dict):
         try:
             pickle_mes = pickle.dumps(message_dict, protocol=pickle.HIGHEST_PROTOCOL)
-            conn.sendall(pickle_mes)
+            conn.sendall(len(pickle_mes).to_bytes(4, 'big') + pickle_mes)
         except Exception:
             self.rooms.remove_client_from_room(conn)
             try:
@@ -59,11 +78,10 @@ class Server:
         player_name = None
         try:
             while True:
-                data = conn.recv(2048)
-                if not data:
+                msg_dict = self.recv_message(conn)
+                if not msg_dict:
                     break
 
-                msg_dict = pickle.loads(data)
                 msg_type = msg_dict.get('type').lower()
 
                 if msg_type == 'signup':
@@ -92,25 +110,19 @@ class Server:
                         continue
 
                     room = self.rooms.rooms.get(room_id)
-                    if not room or not room.game_state:
+                    if not room:
+                        print(f"Move error: Room {room_id} not found")
+                        continue
+                    if not room.game_state:
+                        print(f"Move error: Game in room {room_id} not started yet (Players: {len(room.players)})")
                         continue
                     
                     direction = msg_dict.get('direction')
                     if not direction:
                         continue
+                    print(f"SERVER: Receiving move {direction} from {player_name} in Room {room_id}")
                     result = room.game_state.update_player_position(player_name, direction)
-                    
-                    self.send_message(conn, {
-                        "type": "move_result",
-                        "data": result
-                    })
-
-                    state = room.game_state.generate_state_packet()
-                    self.rooms.broadcast_to_room(room_id, {
-                        'type': 'state_update',
-                        'state': state
-                    })
-                
+                                    
                 elif msg_type == 'disconnect':
                     break
 

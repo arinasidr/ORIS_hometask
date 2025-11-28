@@ -2,77 +2,94 @@ import random
 import pickle
 import threading
 import time
-
 from game import GameState
 
 class Room:
     def __init__(self, room_id):
         self.room_id = room_id
-        self.players = {} #socket:player
+        self.players = {}     # socket: player_name
         self.status = 'waiting'
         self.game_state = None
         self.loop_running = False
 
-    def add_player(self, client_socket, player_name):
-        self.players[client_socket] = player_name
-        if len(self.players) == 2 or len(self.players) == 3:
+    def add_player(self, sock, name):
+        self.players[sock] = name
+        if len(self.players) == 3:     # старт игры
             self.start_game()
 
-    def remove_player(self, client_socket):
-        if client_socket in self.players:
-            name = self.players[client_socket]
-            del self.players[client_socket]
+    def remove_player(self, sock):
+        if sock in self.players:
+            name = self.players[sock]
+            del self.players[sock]
 
             if self.game_state:
                 self.game_state.remove_player(name)
 
             if not self.players:
                 self.loop_running = False
-    
+
+    def send_packet(self, conn, msg):
+        try:
+            data = pickle.dumps(msg, pickle.HIGHEST_PROTOCOL)
+            packet = len(data).to_bytes(4, 'big') + data
+            conn.sendall(packet)
+        except:
+            pass
+
+    def broadcast(self, msg, is_own=None):
+        remove = []
+        data = pickle.dumps(msg, pickle.HIGHEST_PROTOCOL)
+        packet = len(data).to_bytes(4, 'big') + data
+
+        for conn in list(self.players.keys()):
+            if conn is is_own:
+                continue
+            try:
+                conn.sendall(packet)
+            except:
+                remove.append(conn)
+
+        for c in remove:
+            if c in self.players:
+                del self.players[c]
+
     def start_game(self):
         if self.status == 'playing':
-            return 
-        
+            return
+        self.status = 'playing'
         self.game_state = GameState()
         self.game_state.init(list(self.players.values()))
-        self.status = 'playing'
+
+        initial_state = self.game_state.generate_state_packet()
+        self.broadcast({'type': 'state_update', 'state': initial_state})
 
         self.loop_running = True
         threading.Thread(target=self.game_loop, daemon=True).start()
 
     def game_loop(self):
+        print(f"Room {self.room_id} loop STARTED")
         while self.loop_running and self.status == 'playing':
-            state = self.game_state.generate_state_packet()
-            self.broadcast({
-                'type': 'state_update',
-                'state': state
-            })
+            try:
+                state = self.game_state.generate_state_packet() 
 
-            winner = self.game_state.check_game_over()
-            if winner is not None:
                 self.broadcast({
-                    'type': 'game_over',
-                    'winner': winner
+                    'type': 'state_update',
+                    'state': state
                 })
-                self.status = 'finished'
-                self.loop_running = False
-                break
+
+                winner = self.game_state.check_game_over()
+                if winner:
+                    self.broadcast({'type': 'game_over', 'winner': winner})
+                    self.status = 'finished'
+                    self.loop_running = False
+                    print(f"Room {self.room_id} GAME OVER. Winner: {winner}")
+                    break
+            
+            except Exception as e:
+                print(f"!!! CRITICAL ERROR IN GAME LOOP Room {self.room_id}: {e}")
             
             time.sleep(0.2)
-    
-    def broadcast(self, message_dict, is_own = None):
-        lst = []
-        for conn in list(self.players.keys()):
-            if conn is is_own:
-                continue
-            try:
-                conn.sendall(pickle.dumps(message_dict))
-            except:
-                lst.append(conn)
-        
-        for i in lst:
-            del self.players[i]
-        
+
 
 class RoomManager:
     def __init__(self):
@@ -85,43 +102,42 @@ class RoomManager:
         return None
 
     def create_new_room(self):
-        room_id = random.randint(0, 50) #мб все таки потом мы поменяем на счетчик да арина
+        room_id = random.randint(1, 50)
         if room_id not in self.rooms:
             room = Room(room_id)
             self.rooms[room_id] = room
             return room
         else:
             return self.create_new_room()
-        
-    def add_client_to_room(self, client_socket, player_name):
+
+    def add_client_to_room(self, sock, name):
         room = self.find_available_room()
         if not room:
             room = self.create_new_room()
-        room.add_player(client_socket, player_name)
+
+        room.add_player(sock, name)
         return room.room_id
-        
-    def remove_client_from_room(self,  client_socket):
-        rooms_list = list(self.rooms.values())
-        for room in rooms_list:
-            if client_socket in room.players:
-                room.remove_player(client_socket)
+
+    def remove_client_from_room(self, sock):
+        for room in list(self.rooms.values()):
+            if sock in room.players:
+                room.remove_player(sock)
                 if not room.players:
                     del self.rooms[room.room_id]
 
-    def broadcast_to_room(self, room_id, message, is_own = None):
-        room = self.rooms.get(room_id)
-        if room:
-            room.broadcast(message, is_own)
+    def get_room_players(self, room_id):
+        r = self.rooms.get(room_id)
+        if not r:
+            return []
+        return list(r.players.values())
 
-    def get_client_room(self, client_socket):
+    def get_client_room(self, sock):
         for room in self.rooms.values():
-            if client_socket in room.players:
+            if sock in room.players:
                 return room.room_id
         return None
-    
-    def get_room_players(self, room_id):
-        room = self.rooms.get(room_id)
-        if not room:
-            return []
-        return list(room.players.values())
 
+    def broadcast_to_room(self, room_id, msg, is_own=None):
+        room = self.rooms.get(room_id)
+        if room:
+            room.broadcast(msg, is_own)
