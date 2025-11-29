@@ -111,23 +111,23 @@ class Server:
 
                     room = self.rooms.rooms.get(room_id)
                     if not room:
-                        print(f"Move error: Room {room_id} not found")
+                        print(f'move error: room {room_id} not found')
                         continue
                     if not room.game_state:
-                        print(f"Move error: Game in room {room_id} not started yet (Players: {len(room.players)})")
+                        print(f'move error: game in room {room_id} not started yet (players: {len(room.players)})')
                         continue
                     
                     direction = msg_dict.get('direction')
                     if not direction:
                         continue
-                    print(f"SERVER: Receiving move {direction} from {player_name} in Room {room_id}")
+                    print(f'SERVER: receiving move {direction} from {player_name} in room {room_id}')
                     result = room.game_state.update_player_position(player_name, direction)
                                     
                 elif msg_type == 'disconnect':
                     break
 
         except Exception as e:
-             print('Ошибка в handle_client:', e)
+             print('ошибка в handle_client:', e)
 
         finally:
             self.remove_client(conn)

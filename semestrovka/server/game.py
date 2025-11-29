@@ -13,7 +13,6 @@ class GameState:
         self.lock = threading.Lock()
 
     def init(self, players):
-        self.field = [[0]*15 for _ in range(15)]
         self.positions = {}
         self.territories = {}
         self.blocked_until = {}
@@ -182,9 +181,12 @@ class GameState:
         
     def generate_state_packet(self):
         with self.lock:
+            time_passed = time.time() - self.start_time
+            time_left = max(0, 300 - int(time_passed))
+
             return {
-                'field': self.field,
                 'positions': {p: tuple(pos) for p, pos in list(self.positions.items())},
                 'territories': {p: [tuple(c) for c in cells] for p, cells in list(self.territories.items())},
-                'blocked': {p: max(0.0, self.blocked_until.get(p, 0.0) - time.time()) for p in list(self.blocked_until.keys())}
+                'blocked': {p: max(0.0, self.blocked_until.get(p, 0.0) - time.time()) for p in list(self.blocked_until.keys())},
+                'time_left': time_left
             }

@@ -56,14 +56,14 @@ class GameClient(QObject):
             self.send_command({'type':'signup', 'data':self.player_name})
             return True
         except Exception as e:
-            print(f'Ошибочка: {e}')
+            print(f'ошибочка: {e}')
             return False
         
     def disconnect_client(self):
         try:
             self.send_command({'type': 'disconnect'})
         except:
-            pass
+            print('не удалось отправить коммнаду "отключения"')
         self.running = False
         if self.socket:
             self.socket.close()

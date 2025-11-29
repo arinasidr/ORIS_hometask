@@ -28,14 +28,6 @@ class Room:
             if not self.players:
                 self.loop_running = False
 
-    def send_packet(self, conn, msg):
-        try:
-            data = pickle.dumps(msg, pickle.HIGHEST_PROTOCOL)
-            packet = len(data).to_bytes(4, 'big') + data
-            conn.sendall(packet)
-        except:
-            pass
-
     def broadcast(self, msg, is_own=None):
         remove = []
         data = pickle.dumps(msg, pickle.HIGHEST_PROTOCOL)
@@ -82,14 +74,13 @@ class Room:
                     self.broadcast({'type': 'game_over', 'winner': winner})
                     self.status = 'finished'
                     self.loop_running = False
-                    print(f"Room {self.room_id} GAME OVER. Winner: {winner}")
+                    print(f'room {self.room_id} GAME OVER. winner: {winner}')
                     break
             
             except Exception as e:
-                print(f"!!! CRITICAL ERROR IN GAME LOOP Room {self.room_id}: {e}")
+                print(f'!!! CRITICAL ERROR IN GAME LOOP Room {self.room_id}: {e}')
             
             time.sleep(0.2)
-
 
 class RoomManager:
     def __init__(self):
