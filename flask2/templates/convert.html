@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>конвертер</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #ede4ba;
+        }
+        
+        h1 {
+            margin-bottom: 30px;
+            font-size: 40px;
+            color: #333;
+            text-align: center;
+        }
+        
+        i {
+            font-style: normal;
+        }
+        
+        .converter-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        
+        form {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        input[type="text"] {
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            width: 150px;
+            text-align: center;
+            background-color: #f9f9f9;
+            transition: border-color 0.3s ease;
+        }
+        
+        select {
+            padding: 15px 20px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background-color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        button[type="submit"] {
+            padding: 15px 25px;
+            font-size: 18px;
+            background-color: #3a2901;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-weight: bold;
+        }
+        
+        button[type="submit"]:hover {
+            background-color: #5a3d01;
+        }
+
+        .result {
+            font-size: 40px;
+        }
+        
+    </style>
+  </head>
+  <body>
+    <h1>
+      <i>конвертер (っ´ω`)ﾉ(╥ω╥) </i>
+    </h1>
+    <div class="converter-card">
+        <form method="get">
+        <input
+            type="text"
+            name="a"
+            placeholder="температура"
+        />
+
+        <select name="res">
+            <option value="c_to_f">C - F</option>
+            <option value="f_to_c">F - C</option>
+        </select>
+
+        <button
+            type="submit"
+        >
+            конвертировать
+        </button>
+        </form>
+
+        {% if result %}
+        <div class="result">
+        {{ result }}
+        </div>
+        {% endif %}
+        {% if error %}
+        <div class="error">
+        {{ error }}
+        </div>
+        {% endif %}
+    </div>
+
+    <div>
+      <a href="{{ url_for('index') }}">
+        <i>Вернуться на главную</i>
+      </a>
+    </div>
+  </body>
+</html>

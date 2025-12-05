@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>главная</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #ede4ba;
+        }
+        
+        h1 {
+            margin-bottom: 30px;
+            font-size: 40px;
+            color: #333;
+            text-align: center;
+        }
+        
+        .main-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            width: 100%;
+            margin: 30px 0;
+        }
+        
+        .nav-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.662);
+            text-align: center;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .nav-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            border-color: #3a2901;
+            background-color: #f8f9fa;
+        }
+        
+        .nav-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .nav-desc {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <h1>главная страница (◕‿◕)</h1>
+    
+    <div class="main-card">
+        <div style="font-size: 20px; color: #555; margin-bottom: 30px; line-height: 1.5;">
+            добро пожаловать! выберите раздел ниже:
+        </div>
+        
+        <div class="nav-grid">
+            <a href="{{ url_for('quote') }}" class="nav-card">
+                <div class="nav-title">цитаты</div>
+                <div class="nav-desc">мотивирующие цитаты</div>
+            </a>
+            
+            <a href="{{ url_for('gallery') }}" class="nav-card">
+                <div class="nav-title">галерея</div>
+                <div class="nav-desc">фотографии любимок</div>
+            </a>
+            
+            <a href="{{ url_for('movies') }}" class="nav-card">
+                <div class="nav-title">фильмы</div>
+                <div class="nav-desc">каталог фильмов с рейтингами и годами выпуска</div>
+            </a>
+            
+            <a href="{{ url_for('calc') }}" class="nav-card">
+                <div class="nav-title">калькулятор</div>
+                <div class="nav-desc">простой калькулятор для основных операций</div>
+            </a>
+            
+            <a href="{{ url_for('convert') }}" class="nav-card">
+                <div class="nav-title">конвертер</div>
+                <div class="nav-desc">конвертер температуры между Цельсием и Фаренгейтом</div>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

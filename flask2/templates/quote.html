@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Цитаты</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #ede4ba;
+      }
+      .quote-card {
+        max-width: 80%;
+        padding: 40px;
+        border: 2px solid #142129;
+        border-radius: 15px;
+        text-align: center;
+        background-color: white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.607);
+      }
+      .quote-text {
+        font-size: 28px;
+        color: #2c3e50;
+        margin-bottom: 30px;
+        font-style: italic;
+      }
+      .refresh-button {
+        background-color: #3a2901;
+        color: white;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 18px;
+        text-decoration: none;
+        display: inline-block;
+        transition: background-color 0.3s ease;
+      }
+      .refresh-button:hover {
+        background-color: #060b08;
+      }
+      .home-link {
+        margin-top: 20px;
+        font-size: 16px;
+      }
+      .small-img {
+        width: 400px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="quote-card">
+      <h1>цитата, которая поможет вам жить дальше</h1>
+      {% if quote %}
+      <p class="quote-text">"{{ quote }}"</p>
+      {% else %}
+      <p class="quote-text">не будет цитаты</p>
+      {% endif %}
+
+      <a href="{{ url_for('quote') }}" class="refresh-button"
+        >не, чета хочу другую</a
+      >
+    </div>
+    <a href="{{ image.href }}">
+      <img src="{{ image.src }}" class="small-img" />
+    </a>
+    <p class="home-link">
+      <a href="{{ url_for('index') }}">обратно на главную</a>
+    </p>
+  </body>
+</html>
