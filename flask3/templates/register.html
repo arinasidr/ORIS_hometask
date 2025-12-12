@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>регистрация</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f6ff;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #bc5dfb73;
+        }
+
+        .card {
+            width: 360px;
+            background: #ffffff;
+            padding: 28px 24px;
+            border-radius: 14px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 18px;
+            color: #2d3436;
+            font-size: 24px;
+        }
+
+        input, textarea {
+            width: 90%;
+            padding: 12px;
+            margin: 8px 0 14px;
+            border-radius: 10px;
+            border: 1px solid #d0d4e4;
+            font-size: 15px;
+            outline: none;
+        }
+
+        textarea {
+            resize: none;
+            height: 90px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #b807e9;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background: #c865e4;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 14px;
+            color: #b807e9;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+
+</head>
+<body>
+
+    <div class="card">
+        <h2>регистрация</h2>
+
+        <form method="POST">
+            {% if error %}
+                <p style="color:red; font-weight:bold;">{{ error }}</p>
+            {% endif %}
+            <input
+                type="text"
+                name="username"
+                placeholder="имя пользователя"
+                required
+            >
+
+            <input
+                type="password"
+                name="password"
+                placeholder="пароль"
+                required
+            >
+
+            <textarea
+                name="bio"
+                placeholder="напишите сюда че нибудь пж"
+            ></textarea>
+
+            <button class="btn">создать аккаунт</button>
+        </form>
+
+        <a href="{{ url_for('login') }}">уже есть аккаунт? войти</a>
+    </div>
+
+</body>
+</html>

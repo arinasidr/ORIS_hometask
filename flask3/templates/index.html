@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Главная</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <style>
+        html,body {
+            height: 100%;
+            margin: 0;
+            font-family: Inter, Arial, sans-serif;
+            background-color: #bc5dfb73;
+        }
+
+        .wrap {
+            min-height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+        }
+
+        .card {
+            width: 340px;
+            max-width: 95%;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 30px 22px;
+            box-shadow: 0 10px 30px rgba(15,30,60,0.08);
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0 0 22px;
+            font-size: 22px;
+            color: #2d3436;
+            font-weight: 700;
+        }
+
+        p.lead {
+            margin: 0 0 18px;
+            color: #556;
+            font-size: 14px;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 0;
+            background: #b807e9;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform .12s ease, box-shadow .12s ease;
+            box-shadow: 0 6px 18px rgba(9,132,227,0.16);
+        }
+
+        .btn:hover {
+            background: #b864cf;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(9,132,227,0.18);
+        }
+
+        .btn.secondary {
+            background: transparent;
+            color: #b807e9;
+            border: 1px solid rgba(9,132,227,0.12);
+            box-shadow: none;
+        }
+
+        a {
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrap">
+    <div class="card">
+        <h1>Добро пожаловать!</h1>
+        <p class="lead">Создайте аккаунт или войдите в существующий профиль</p>
+
+        <a href="{{ url_for('register') }}"><button class="btn">Регистрация</button></a>
+        <a href="{{ url_for('login') }}"><button class="btn secondary">Вход</button></a>
+
+    </div>
+</div>
+
+</body>
+</html>

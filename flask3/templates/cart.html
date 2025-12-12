@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Корзина</title>
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            font-family: Inter, Arial, sans-serif;
+            background-color: #bc5dfb73;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card {
+            width: 420px;
+            background: #ffffff;
+            padding: 28px;
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(15,30,60,0.08);
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 18px;
+            font-size: 24px;
+            color: #2d3436;
+        }
+
+        .item {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .btn {
+            background: #b807e9;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background: #c865e4;
+        }
+
+        .btn-delete {
+            background: #ff4f4f;
+        }
+
+        .btn-delete:hover {
+            background: #ff7878;
+        }
+
+        .btn-footer {
+            width: 100%;
+            padding: 12px;
+            background: #b807e9;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-footer:hover {
+            background: #c865e4;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <h2>Корзина</h2>
+    {% if mess %} 
+        <p style="color:rgb(91, 126, 23); font-weight:bold;">{{ mess }}</p>
+    {% endif %}
+    {% if items %}
+        {% for product, kolvo in items %}
+            <div class="item">
+                <span>{{ product.name }} — {{ kolvo }} шт.</span>
+                <a class="btn btn-delete" href="{{ url_for('remove', product_id=product.id) }}">
+                    Удалить
+                </a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p style="text-align:center;">Корзина пуста</p>
+    {% endif %}
+
+    <a href="{{ url_for('products')}}"><button class="btn-footer">обратно в магазин</button></a>
+    <a href="{{ url_for('checkout') }}"><button class="btn-footer">оформить заказ</button></a>
+</div>
+

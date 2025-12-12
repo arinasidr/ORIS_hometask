@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Профиль</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef3ff;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #bc5dfb73;
+        }
+
+        .card {
+            width: 420px;
+            background: #ffffff;
+            padding: 30px 26px;
+            border-radius: 14px;
+            box-shadow: 0 6px 22px rgba(0,0,0,0.12);
+            text-align: center;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 18px;
+            color: #2d3436;
+            font-size: 26px;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            font-size: 14px;
+            color: #555;
+            margin-top: 10px;
+            margin-bottom: 6px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #d0d4e4;
+            font-size: 15px;
+            resize: none;
+            height: 110px;
+            outline: none;
+            margin-bottom: 20px;
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+
+            width: 100%;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #b807e9;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: 0.2s;
+        }
+
+        .logout {
+            background-color: #57425d;
+        }
+
+        .btn:hover {
+            background: #c865e4;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 14px;
+            color: #b807e9;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="card">
+        {% if error %}
+            <p style="color:red; font-weight:bold;">{{ error }}</p>
+        {% endif %}
+        <h2>профиль: {{ username }}</h2>
+
+        <p>о тебе: {{ bio }}</p>
+        <div class="buttons">
+            <a href="{{ url_for('products')}}"><button class="btn">в магазин</button></a>
+            <a href="{{ url_for('logout') }}"><button class="btn logout">выйти</button></a>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Товары</title>
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            font-family: Inter, Arial, sans-serif;
+            background-color: #bc5dfb73;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card {
+            width: 420px;
+            background: #ffffff;
+            padding: 28px;
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(15,30,60,0.08);
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 18px;
+            font-size: 24px;
+            color: #2d3436;
+        }
+
+        .product {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .product:last-child {
+            border-bottom: none;
+        }
+
+        .btn {
+            background: #b807e9;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background: #c865e4;
+        }
+
+        .footer-link {
+            display: block;
+            margin-top: 20px;
+            text-align: center;
+            text-decoration: none;
+            color: #b807e9;
+            font-weight: bold;
+            font-size: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <h2>Товары</h2>
+
+    {% for p in items %}
+        <div class="product">
+            <span>{{ p.name }} — {{ p.price }}₽</span>
+            <a class="btn" href="{{ url_for('add_to_cart', product_id=p.id) }}">Добавить</a>
+        </div>
+    {% endfor %}
+
+    <a class="footer-link" href="{{ url_for('cart') }}">Перейти в корзину</a>
+
+</div>
+
+</body>
+</html>
+
